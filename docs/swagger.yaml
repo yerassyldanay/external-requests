@@ -4,7 +4,9 @@ definitions:
     properties:
       headers:
         additionalProperties:
-          type: string
+          items:
+            type: string
+          type: array
         type: object
       method:
         type: string

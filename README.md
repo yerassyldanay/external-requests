@@ -62,9 +62,11 @@ curl --location --request POST 'http://0.0.0.0:8600/api/v1/task' \
 Check status of the task:
 
 ```shell
-curl --location --request GET 'http://0.0.0.0:8600/api/v1/tasks/<task_id>' \
+curl --location --request GET 'http://0.0.0.0:8600/api/v1/task/<task_id>' \
 --header 'Content-Type: application/json; charset=utf-8' | jq
 ```
+
+Check REST API docs [here](./docs/swagger.json)
 
 ## General Design
 
@@ -72,4 +74,3 @@ curl --location --request GET 'http://0.0.0.0:8600/api/v1/tasks/<task_id>' \
 
 ## TODO
 * rate limit check is not added to business logic
-

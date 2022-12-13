@@ -103,7 +103,10 @@ const docTemplate = `{
                 "headers": {
                     "type": "object",
                     "additionalProperties": {
-                        "type": "string"
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        }
                     }
                 },
                 "method": {
