@@ -11,6 +11,7 @@ import (
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"go.uber.org/zap"
 
 	"github.com/yerassyldanay/requestmaker/pkg/mockx"
 	"github.com/yerassyldanay/requestmaker/service/taskservice"
@@ -23,11 +24,14 @@ type mockTaskServer struct {
 }
 
 func newMockTaskServer(t *testing.T) *mockTaskServer {
+	logger, err := zap.NewDevelopment()
+	require.Errorf(t, err, "failed to create a logger")
+
 	gin.SetMode(gin.ReleaseMode)
 	ctr := gomock.NewController(t)
 	mockService := mock_taskservice.NewMockTaskHandler(ctr)
 	return &mockTaskServer{
-		taskServer:      NewTaskServer(mockService),
+		taskServer:      NewTaskServer(logger, mockService),
 		mockTaskHandler: mockService,
 	}
 }

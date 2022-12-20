@@ -16,6 +16,7 @@ func ValidateHeader() gin.HandlerFunc {
 			})
 			return
 		}
+
 		c.Next()
 		c.Header("Content-Type", "application/json")
 		c.Header("Content-Length", fmt.Sprintf("%v", c.Request.ContentLength))

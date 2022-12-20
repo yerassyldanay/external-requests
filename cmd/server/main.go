@@ -58,6 +58,7 @@ func main() {
 	migrateInstance, err := migrate.NewWithDatabaseInstance(fmt.Sprintf("file://%s", filePath), "postgres", driver)
 	errorx.PanicIfError(err)
 
+	// migration
 	_ = migrateInstance.Up()
 
 	// kafka
@@ -79,7 +80,10 @@ func main() {
 	errorx.PanicIfError(statusCmd.Err())
 
 	// rate limiter
-	rateLimiter := ratelimiter.NewExternalReqLimit(logger, redisConn)
+	rateLimiter := ratelimiter.NewExternalReqLimit(
+		logger.With(zap.String("layer", "provider"), zap.String("type", "ratelimiter")),
+		redisConn,
+	)
 
 	// establishing connection to message broker
 	backgroundWorker := backgroundworker.NewWorker(
@@ -103,7 +107,7 @@ func main() {
 	)
 
 	// server
-	server := handler.NewTaskServer(taskService)
+	server := handler.NewTaskServer(logger, taskService)
 	go func(server *handler.TaskServer) {
 		server.Router.Run(conf.ListenAddr)
 	}(server)

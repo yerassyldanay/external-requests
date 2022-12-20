@@ -3,6 +3,7 @@ package handler
 import (
 	"context"
 	"database/sql"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"net/http"
@@ -11,15 +12,16 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 	"github.com/yerassyldanay/requestmaker/service/taskservice"
+	"go.uber.org/zap"
 )
 
 type ErrMsg struct {
 	Err string `json:"err"`
 }
 
-type CreateTaskArgs struct {
-	Method  string              `json:"method"`
-	Url     string              `json:"url"`
+type ParamsAcceptTask struct {
+	Method  string              `json:"method" binding:"required,oneof=GET POST PUT PATCH DELETE HEAD CONNECT OPTIONS TRACE"`
+	Url     string              `json:"url" binding:"required,url"`
 	Headers map[string][]string `json:"headers"`
 }
 
@@ -35,12 +37,12 @@ type ResponseAcceptTask struct {
 // and handles it in the background
 // @Accept  json
 // @Produce  json
-// @Param args body CreateTaskArgs true "task info"
-// @Success 200 {object} CreateTaskArgs
+// @Param args body ParamsAcceptTask true "task info"
+// @Success 200 {object} ResponseAcceptTask
 // @Failure 400 {object} ErrMsg
 // @Router /api/v1/task [POST]
 func (server *TaskServer) AcceptTask(c *gin.Context) {
-	var args = CreateTaskArgs{
+	var args = ParamsAcceptTask{
 		Headers: make(map[string][]string, 10),
 	}
 	if err := c.ShouldBindJSON(&args); err != nil {
@@ -57,6 +59,8 @@ func (server *TaskServer) AcceptTask(c *gin.Context) {
 		})
 		return
 	}
+
+	server.logger.Debug("parsed url", zap.Any("url", parseUrl))
 
 	task, err := server.TaskService.Handle(context.Background(), taskservice.ParamsHandle{
 		Method:  args.Method,
@@ -76,8 +80,16 @@ func (server *TaskServer) AcceptTask(c *gin.Context) {
 	})
 }
 
-type GetTaskArgs struct {
-	TaskID string `uri:"task_id" binding:"required"`
+type ParamsCheckTask struct {
+	TaskID string `uri:"task_id" binding:"required,uuid"`
+}
+
+type ResponseCheckTask struct {
+	TaskID        string           `json:"task_id"`
+	TaskStatus    string           `json:"task_status"`
+	StatusCode    *int             `json:"status_code"`
+	Headers       *json.RawMessage `json:"headers"`
+	ContentLength *int64           `json:"content_length"`
 }
 
 // CheckTask
@@ -87,11 +99,11 @@ type GetTaskArgs struct {
 // @Accept  json
 // @Produce  json
 // @Param        task_id    path     string  false  "id of the task"
-// @Success 200 {object} GetTaskArgs
+// @Success 200 {object} ResponseCheckTask
 // @Failure 400 {object} ErrMsg
 // @Router /api/v1/task/{task_id} [GET]
 func (server *TaskServer) CheckTask(c *gin.Context) {
-	var args GetTaskArgs
+	var args ParamsCheckTask
 
 	if err := c.ShouldBindUri(&args); err != nil {
 		c.JSON(http.StatusBadRequest, ErrMsg{
@@ -125,5 +137,11 @@ func (server *TaskServer) CheckTask(c *gin.Context) {
 	default:
 	}
 
-	c.JSON(http.StatusOK, taskInfo)
+	c.JSON(http.StatusOK, ResponseCheckTask{
+		TaskID:        taskInfo.TaskID.String(),
+		TaskStatus:    taskInfo.TaskStatus,
+		StatusCode:    taskInfo.StatusCode,
+		Headers:       taskInfo.Headers,
+		ContentLength: taskInfo.ContentLength,
+	})
 }

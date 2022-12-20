@@ -66,11 +66,15 @@ curl --location --request GET 'http://0.0.0.0:8600/api/v1/task/<task_id>' \
 --header 'Content-Type: application/json; charset=utf-8' | jq
 ```
 
-Check REST API docs [here](./docs/swagger.json)
+Check REST API docs [here](./docs/)
 
 ## General Design
 
 ![design of the microservice](./design.drawio.png)
 
 ## TODO
-* rate limit check is not added to business logic
+* add load test (check under highload)
+* resolve TODOs left in the code
+* metrics are not correct (it is just a PoC/proof of concept)
+* create grafana graphics and make it runnable with docker command
+

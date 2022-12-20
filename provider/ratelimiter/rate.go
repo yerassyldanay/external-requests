@@ -12,16 +12,20 @@ import (
 )
 
 type ExternalReqLimit struct {
-	logger *zap.Logger
-	client redis.Cmdable
+	logger              *zap.Logger
+	client              redis.Cmdable
+	waitBetweenRequests time.Duration
 }
 
 func NewExternalReqLimit(logger *zap.Logger, client redis.Cmdable) *ExternalReqLimit {
 	return &ExternalReqLimit{
-		logger: logger,
-		client: client,
+		logger:              logger,
+		client:              client,
+		waitBetweenRequests: 1 * time.Second,
 	}
 }
+
+var _ ExternalReqLimiter = (*ExternalReqLimit)(nil)
 
 func (reqLimit *ExternalReqLimit) Allowed(ctx context.Context, urlParam url.URL) (bool, error) {
 	stringCmd := reqLimit.client.Get(ctx, urlParam.String())
@@ -43,7 +47,7 @@ func (reqLimit *ExternalReqLimit) Allowed(ctx context.Context, urlParam url.URL)
 		return false, fmt.Errorf("failed to parse int. err: %v", err)
 	}
 
-	wasBefore := time.UnixMilli(millisecond).Before(time.Now().Add(time.Millisecond * 100 * -1))
+	wasBefore := time.UnixMilli(millisecond).Before(time.Now().Add(reqLimit.waitBetweenRequests * -1))
 	if !wasBefore {
 		reqLimit.logger.Debug("rate limit is hit by this request", zap.String("url", urlParam.String()))
 	}

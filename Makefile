@@ -48,3 +48,5 @@ api_up:
 services_up:
 	@echo "[DOCKER] preparing services..."
 	docker-compose -f docker-services.yml up --bu -d
+	@echo "[DOCKER] preparing metrics services..."
+	docker-compose -f instruments/metrics/docker-metrics.yml up --bu -d

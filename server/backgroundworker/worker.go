@@ -69,13 +69,13 @@ Loop:
 		case <-ctx.Done():
 			break Loop
 		case taskByte := <-taskChan:
+			worker.lock()
 			go worker.handleMessage(ctx, taskByte)
 		}
 	}
 }
 
 func (worker *Worker) handleMessage(ctx context.Context, taskByte []byte) {
-	worker.lock()
 	defer worker.unlock()
 
 	var task Task
@@ -84,8 +84,31 @@ func (worker *Worker) handleMessage(ctx context.Context, taskByte []byte) {
 		return
 	}
 
-	// TODO check rate limit
-	// thus we can avoid problems with IPs being blocked / load etc.
+	// check rate limit and mark url as requested in a rate limiter
+	allowed, err := worker.RateLimiter.Allowed(ctx, task.Url)
+	switch {
+	case err != nil:
+		worker.logger.Error("failed to unmarshal MB msg", zap.Error(err))
+		return
+	case !allowed:
+		worker.logger.Debug("too many requests being made", zap.String("url", task.Url.String()))
+
+		// update status in the database to indicate that request was not made
+		// because of requests rate limit
+		// Note: error in database query must not affect the final result
+		err = worker.TaskWriter.UpdateStatus(ctx, taskprovider.UpdateStatusParams{
+			TaskStatus: "reqerror",
+			TaskID:     task.TaskId,
+		})
+		if err != nil {
+			worker.logger.Error("failed to update task status to reqerror",
+				zap.String("url", task.Url.String()),
+				zap.Error(err),
+			)
+		}
+		return
+	default:
+	}
 
 	// handle task here
 	newRequest, err := http.NewRequest(task.Method, task.Url.String(), nil)
@@ -107,6 +130,12 @@ func (worker *Worker) handleMessage(ctx context.Context, taskByte []byte) {
 	if err != nil {
 		worker.logger.Error("failed to add http response info to DB", zap.Error(err))
 		return
+	}
+
+	// add to rate limiter
+	if err := worker.RateLimiter.Record(ctx, task.Url); err != nil {
+		// err in rate limiter must not affect the final result
+		worker.logger.Error("failed to add url to rate limiter", zap.Error(err))
 	}
 }
 
