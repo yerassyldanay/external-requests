@@ -1,0 +1,132 @@
+{
+    "swagger": "2.0",
+    "info": {
+        "description": "service accepts and handler requests to 3rd party services",
+        "title": "Task Handler Service",
+        "contact": {
+            "name": "Yerassyl Danay"
+        },
+        "version": "1.0.0"
+    },
+    "basePath": "/api/v1/",
+    "paths": {
+        "/api/v1/task": {
+            "post": {
+                "description": "this endpoint accepts task from the client",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "task"
+                ],
+                "summary": "send task to the server",
+                "parameters": [
+                    {
+                        "description": "task info",
+                        "name": "args",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/handler.CreateTaskArgs"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/handler.CreateTaskArgs"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/handler.ErrMsg"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/task/{task_id}": {
+            "get": {
+                "description": "this endpoint provides info on the task (status, http response info, etc.)",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "task"
+                ],
+                "summary": "fetch info on the task",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "id of the task",
+                        "name": "task_id",
+                        "in": "path"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/handler.GetTaskArgs"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/handler.ErrMsg"
+                        }
+                    }
+                }
+            }
+        }
+    },
+    "definitions": {
+        "handler.CreateTaskArgs": {
+            "type": "object",
+            "properties": {
+                "headers": {
+                    "type": "object",
+                    "additionalProperties": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        }
+                    }
+                },
+                "method": {
+                    "type": "string"
+                },
+                "url": {
+                    "type": "string"
+                }
+            }
+        },
+        "handler.ErrMsg": {
+            "type": "object",
+            "properties": {
+                "err": {
+                    "type": "string"
+                }
+            }
+        },
+        "handler.GetTaskArgs": {
+            "type": "object",
+            "required": [
+                "taskID"
+            ],
+            "properties": {
+                "taskID": {
+                    "type": "string"
+                }
+            }
+        }
+    }
+}

@@ -1,0 +1,101 @@
+---
+version: '3.8'
+services:
+  requests-zookeeper-1:
+    image: confluentinc/cp-zookeeper:latest
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+    ports:
+      - 22181:2181
+    networks:
+      - requests_network
+
+  requests-zookeeper-2:
+    image: confluentinc/cp-zookeeper:latest
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+    ports:
+      - 32181:2181
+    networks:
+      - requests_network
+
+  requests-kafka-1:
+    image: confluentinc/cp-kafka:latest
+    hostname: requests-kafka-1
+    container_name: requests-kafka-1
+    depends_on:
+      - requests-zookeeper-1
+      - requests-zookeeper-2
+    ports:
+      - 29092:29092
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: requests-zookeeper-1:2181,requests-zookeeper-2:2181
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://requests-kafka-1:9092,PLAINTEXT_HOST://localhost:29092
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+    networks:
+      - requests_network
+ 
+  requests-kafka-2:
+    image: confluentinc/cp-kafka:latest
+    hostname: requests-kafka-2
+    container_name: requests-kafka-2
+    depends_on:
+      - requests-zookeeper-1
+      - requests-zookeeper-2
+    ports:
+      - 39092:39092
+    environment:
+      KAFKA_BROKER_ID: 2
+      KAFKA_ZOOKEEPER_CONNECT: requests-zookeeper-1:2181,requests-zookeeper-2:2181
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://requests-kafka-2:9092,PLAINTEXT_HOST://localhost:39092
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+    networks:
+      - requests_network
+  
+  requests-postgres:
+    restart: always
+    image: postgres:15
+    hostname: requests-postgres
+    container_name: requests-postgres
+    environment:
+      - "POSTGRES_DB=simple"
+      - "POSTGRES_USER=simple"
+      - "POSTGRES_PASSWORD=simple"
+      - "TZ=Asia/Almaty"
+    ports:
+      - 8601:5432
+    networks:
+      - requests_network
+
+  requests-redis:
+    image: redis:latest
+    hostname: requests-redis
+    container_name: requests-redis
+    ports:
+      - 8602:6379
+    networks:
+      - requests_network
+
+  requests-redis-commander:
+    image: rediscommander/redis-commander:latest
+    hostname: requests-redis-commander
+    container_name: requests-redis-commander
+    links:
+      - requests-redis
+    environment:
+      - REDIS_HOSTS=local:requests-redis:6379
+    ports:
+      - 8603:8081
+    networks:
+      - requests_network
+
+networks:
+  requests_network:
+    driver: bridge

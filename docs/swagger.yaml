@@ -1,0 +1,86 @@
+basePath: /api/v1/
+definitions:
+  handler.CreateTaskArgs:
+    properties:
+      headers:
+        additionalProperties:
+          items:
+            type: string
+          type: array
+        type: object
+      method:
+        type: string
+      url:
+        type: string
+    type: object
+  handler.ErrMsg:
+    properties:
+      err:
+        type: string
+    type: object
+  handler.GetTaskArgs:
+    properties:
+      taskID:
+        type: string
+    required:
+    - taskID
+    type: object
+info:
+  contact:
+    name: Yerassyl Danay
+  description: service accepts and handler requests to 3rd party services
+  title: Task Handler Service
+  version: 1.0.0
+paths:
+  /api/v1/task:
+    post:
+      consumes:
+      - application/json
+      description: this endpoint accepts task from the client
+      parameters:
+      - description: task info
+        in: body
+        name: args
+        required: true
+        schema:
+          $ref: '#/definitions/handler.CreateTaskArgs'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/handler.CreateTaskArgs'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/handler.ErrMsg'
+      summary: send task to the server
+      tags:
+      - task
+  /api/v1/task/{task_id}:
+    get:
+      consumes:
+      - application/json
+      description: this endpoint provides info on the task (status, http response
+        info, etc.)
+      parameters:
+      - description: id of the task
+        in: path
+        name: task_id
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/handler.GetTaskArgs'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/handler.ErrMsg'
+      summary: fetch info on the task
+      tags:
+      - task
+swagger: "2.0"

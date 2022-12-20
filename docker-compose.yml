@@ -1,0 +1,32 @@
+version: "3.8"
+services:
+  third-party-requests:
+    container_name: third-party-requests
+    hostname: third-party-requests
+    image: golang:latest
+    build:
+      context: .
+      dockerfile: Dockerfile
+    environment:
+      POSTGRESQL_HOST: requests-postgres
+      POSTGRESQL_PORT: 5432
+      POSTGRESQL_DB: simple
+      POSTGRESQL_USER: simple
+      POSTGRESQL_PASSWORD: simple
+      MB_HOSTS: requests-kafka-1:9092,requests-kafka-2:9092
+      MB_REQUESTS_TOPIC: hometask.requests.tasks
+      MB_REQUESTS_PARTITION: 0
+      LISTEN_ADDR: ":8500"
+      REDIS_HOST: requests-redis
+      REDIS_PORT: 6379
+      REDIS_DATABASE: 0
+      REDIS_TEST_DATABASE: 1
+    ports:
+      - 8600:8500
+    networks:
+      - requestmaker_requests_network
+    command: ["./app"]
+
+networks:
+  requestmaker_requests_network:
+    external: true
