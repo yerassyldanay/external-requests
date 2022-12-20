@@ -1,0 +1,35 @@
+version: '3.8'
+
+volumes:
+  prometheus_data: {}
+  grafana_data: {}
+
+services:
+  prometheus:
+    container_name: requests-prometheus
+    hostname: requests-prometheus
+    image: prom/prometheus
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml
+      - prometheus_data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+    ports:
+      - 8611:9090
+    networks:
+      - requestmaker_requests_network
+
+  grafana:
+    container_name: requests-grafana
+    hostname: requests-grafana
+    image: grafana/grafana
+    volumes:
+      - grafana_data:/var/lib/grafana
+    ports:
+      - 8612:3000
+    networks:
+      - requestmaker_requests_network
+      
+networks:
+  requestmaker_requests_network:
+    external: true
